@@ -4,12 +4,19 @@ import axios from 'axios';
 function MemeForm() {
   const [form, setForm] = useState({ title: '', image_url: '', tags: '' });
 
+  const backendURL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
   const submit = async () => {
-    const tagsArray = form.tags.split(',').map(tag => tag.trim());
-    await axios.post('http://localhost:5000/memes', { ...form, tags: tagsArray });
-    setForm({ title: '', image_url: '', tags: '' });
+    try {
+      const tagsArray = form.tags.split(',').map(tag => tag.trim());
+      await axios.post(`${backendURL}/memes`, { ...form, tags: tagsArray });
+      setForm({ title: '', image_url: '', tags: '' });
+    } catch (err) {
+      console.error('❌ Meme creation failed:', err);
+      alert('Failed to create meme. Please check the console.');
+    }
   };
 
   return (
