@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { supabase } = require("../services/supabase");
 const { getCaption } = require("../services/gemini");
+const { getIO } = require("../socket"); // ✅ Imported for socket emission
 
 // Create a meme
 router.post("/", async (req, res) => {
@@ -27,6 +28,10 @@ router.post("/", async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    // ✅ Emit new meme to all clients
+    const io = getIO();
+    io.emit("newMeme", data);
 
     res.status(201).json(data);
   } catch (err) {

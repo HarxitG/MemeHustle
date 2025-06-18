@@ -1,9 +1,12 @@
-module.exports = (io) => {
-  io.on("connection", (socket) => {
-    console.log("New client connected:", socket.id);
+const { Server } = require("socket.io");
+let ioInstance;
 
-    socket.on("disconnect", () => {
-      console.log("Client disconnected:", socket.id);
-    });
-  });
-};
+const io = new Server(server, { cors: corsOptions });
+ioInstance = io;
+
+// Exported so other files can access it
+const getIO = () => ioInstance;
+
+initSockets(io);
+
+module.exports = { getIO };
