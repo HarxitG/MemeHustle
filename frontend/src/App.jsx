@@ -5,21 +5,23 @@ import Leaderboard from './components/Leaderboard';
 import io from 'socket.io-client';
 import SocketContext from './context/SocketContext';
 
+const backendURL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+
 function App() {
   const [memes, setMemes] = useState([]);
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const newSocket = io('http://localhost:5000');
+    const newSocket = io(backendURL);
     setSocket(newSocket);
 
-    fetch('http://localhost:5000/memes/leaderboard')
+    fetch(`${backendURL}/memes/leaderboard`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
           setMemes(data);
         } else {
-          console.warn("⚠️ Invalid leaderboard response: ", data);
+          console.warn("⚠️ Invalid leaderboard response:", data);
           setMemes([]);
         }
       })
@@ -30,7 +32,9 @@ function App() {
 
     newSocket.on('newMeme', meme => setMemes(prev => [meme, ...prev]));
     newSocket.on('voteUpdate', ({ id, increment }) => {
-      setMemes(prev => prev.map(m => m.id === id ? { ...m, upvotes: m.upvotes + increment } : m));
+      setMemes(prev =>
+        prev.map(m => m.id === id ? { ...m, upvotes: m.upvotes + increment } : m)
+      );
     });
 
     return () => {
@@ -43,9 +47,9 @@ function App() {
   return (
     <SocketContext.Provider value={socket}>
       <div className="bg-black text-cyberblue min-h-screen p-4">
-        <h1 className="text-4xl text-neon font-bold mb-4">💀 MemeHustle Marketplace</h1>
+        <h1 className="text-4xl text-neon font-bold mb-4">MemeHustle Marketplace</h1>
         <MemeForm />
-        <Leaderboard memes={Array.isArray(memes) ? memes.slice(0, 5) : []} />
+        <Leaderboard memes={memes.slice(0, 5)} />
         <MemeGallery memes={memes} />
       </div>
     </SocketContext.Provider>
