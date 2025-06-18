@@ -5,7 +5,8 @@ import Leaderboard from './components/Leaderboard';
 import io from 'socket.io-client';
 import SocketContext from './context/SocketContext';
 
-const backendURL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+// ✅ Use VITE_ prefixed env var for Vite projects
+const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 function App() {
   const [memes, setMemes] = useState([]);
