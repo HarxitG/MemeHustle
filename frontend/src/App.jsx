@@ -15,37 +15,37 @@ function App() {
     const newSocket = io(backendURL);
     setSocket(newSocket);
 
-    // Initial leaderboard fetch
     const fetchMemes = async () => {
       try {
         const res = await fetch(`${backendURL}/memes/leaderboard`);
         const data = await res.json();
-        if (Array.isArray(data)) setMemes(data);
-        else setMemes([]);
+        if (Array.isArray(data)) {
+          setMemes(data.sort((a, b) => b.upvotes - a.upvotes));
+        }
       } catch (err) {
-        console.error("Error fetching leaderboard:", err);
-        setMemes([]);
+        console.error("Error fetching memes:", err);
       }
     };
 
     fetchMemes();
 
-    // 🔄 Handle new meme added from another client
+    // 🔁 When a new meme is created
     newSocket.on('newMeme', meme => {
       setMemes(prev => {
-        const alreadyExists = prev.some(m => m.id === meme.id);
-        if (alreadyExists) return prev;
-        return [meme, ...prev];
+        const exists = prev.some(m => m.id === meme.id);
+        const updated = exists ? prev : [...prev, meme];
+        return updated.sort((a, b) => b.upvotes - a.upvotes);
       });
     });
 
-    // 🔄 Handle upvote/downvote updates
+    // 🔁 When a meme is upvoted/downvoted
     newSocket.on('voteUpdate', ({ id, increment }) => {
-      setMemes(prev =>
-        prev.map(m =>
+      setMemes(prev => {
+        const updated = prev.map(m =>
           m.id === id ? { ...m, upvotes: m.upvotes + increment } : m
-        )
-      );
+        );
+        return updated.sort((a, b) => b.upvotes - a.upvotes);
+      });
     });
 
     return () => newSocket.disconnect();
@@ -58,7 +58,7 @@ function App() {
       <div className="bg-black text-cyberblue min-h-screen p-4">
         <h1 className="text-4xl text-neon font-bold mb-4">MemeHustle Marketplace</h1>
         <MemeForm />
-        <Leaderboard memes={[...memes].sort((a, b) => b.upvotes - a.upvotes).slice(0, 5)} />
+        <Leaderboard memes={memes.slice(0, 5)} />
         <MemeGallery memes={memes} />
       </div>
     </SocketContext.Provider>
