@@ -74,5 +74,5 @@ npm install
 node server.js
 ```
 
-##Deployed on render
+## Deployed on render
 Live: https://memehustle-frontend.onrender.com
