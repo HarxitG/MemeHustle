@@ -17,7 +17,7 @@ function App() {
 
     const fetchMemes = async () => {
       try {
-        const res = await fetch(`${backendURL}/memes/leaderboard`);
+        const res = await fetch(`${backendURL}/memes`); // ✅ Fetch all memes, not just leaderboard
         const data = await res.json();
         if (Array.isArray(data)) {
           setMemes(data.sort((a, b) => b.upvotes - a.upvotes));
@@ -29,7 +29,7 @@ function App() {
 
     fetchMemes();
 
-    // 🔁 When a new meme is created
+    // ✅ Real-time: new meme
     newSocket.on('newMeme', meme => {
       setMemes(prev => {
         const exists = prev.some(m => m.id === meme.id);
@@ -38,7 +38,7 @@ function App() {
       });
     });
 
-    // 🔁 When a meme is upvoted/downvoted
+    // ✅ Real-time: upvote/downvote
     newSocket.on('voteUpdate', ({ id, increment }) => {
       setMemes(prev => {
         const updated = prev.map(m =>
