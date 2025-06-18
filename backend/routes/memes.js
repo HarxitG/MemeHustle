@@ -2,9 +2,9 @@ const express = require("express");
 const router = express.Router();
 const { supabase } = require("../services/supabase");
 const { getCaption } = require("../services/gemini");
-const { getIO } = require("../socket"); // ✅ Imported for socket emission
+const { getIO } = require("../socket"); // ✅ Import socket emitter
 
-// Create a meme
+// ✅ Create a meme
 router.post("/", async (req, res) => {
   const { title, image_url, tags } = req.body;
 
@@ -40,7 +40,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Generate AI caption
+// ✅ Generate AI caption
 router.post("/:id/caption", async (req, res) => {
   try {
     const { tags } = req.body;
@@ -57,7 +57,24 @@ router.post("/:id/caption", async (req, res) => {
   }
 });
 
-// Leaderboard
+// ✅ Get all memes sorted by upvotes
+router.get("/", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("memes")
+      .select("*")
+      .order("upvotes", { ascending: false });
+
+    if (error) throw error;
+
+    res.status(200).json(data || []);
+  } catch (err) {
+    console.error("Failed to fetch memes:", err);
+    res.status(500).json({ error: "Failed to fetch memes." });
+  }
+});
+
+// ✅ Leaderboard (top 10 only)
 router.get("/leaderboard", async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -66,10 +83,7 @@ router.get("/leaderboard", async (req, res) => {
       .order("upvotes", { ascending: false })
       .limit(10);
 
-    if (error) {
-      console.error("Supabase error:", error);
-      throw new Error("Supabase query failed");
-    }
+    if (error) throw error;
 
     res.status(200).json(data || []);
   } catch (err) {
