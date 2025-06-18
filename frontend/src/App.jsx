@@ -5,7 +5,6 @@ import Leaderboard from './components/Leaderboard';
 import io from 'socket.io-client';
 import SocketContext from './context/SocketContext';
 
-// ✅ Use VITE_ prefixed env var for Vite projects
 const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 function App() {
@@ -16,31 +15,40 @@ function App() {
     const newSocket = io(backendURL);
     setSocket(newSocket);
 
-    fetch(`${backendURL}/memes/leaderboard`)
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setMemes(data);
-        } else {
-          console.warn("⚠️ Invalid leaderboard response:", data);
-          setMemes([]);
-        }
-      })
-      .catch(err => {
+    // Initial leaderboard fetch
+    const fetchMemes = async () => {
+      try {
+        const res = await fetch(`${backendURL}/memes/leaderboard`);
+        const data = await res.json();
+        if (Array.isArray(data)) setMemes(data);
+        else setMemes([]);
+      } catch (err) {
         console.error("Error fetching leaderboard:", err);
         setMemes([]);
-      });
+      }
+    };
 
-    newSocket.on('newMeme', meme => setMemes(prev => [meme, ...prev]));
+    fetchMemes();
+
+    // 🔄 Handle new meme added from another client
+    newSocket.on('newMeme', meme => {
+      setMemes(prev => {
+        const alreadyExists = prev.some(m => m.id === meme.id);
+        if (alreadyExists) return prev;
+        return [meme, ...prev];
+      });
+    });
+
+    // 🔄 Handle upvote/downvote updates
     newSocket.on('voteUpdate', ({ id, increment }) => {
       setMemes(prev =>
-        prev.map(m => m.id === id ? { ...m, upvotes: m.upvotes + increment } : m)
+        prev.map(m =>
+          m.id === id ? { ...m, upvotes: m.upvotes + increment } : m
+        )
       );
     });
 
-    return () => {
-      newSocket.disconnect();
-    };
+    return () => newSocket.disconnect();
   }, []);
 
   if (!socket) return <div>Loading...</div>;
@@ -50,7 +58,7 @@ function App() {
       <div className="bg-black text-cyberblue min-h-screen p-4">
         <h1 className="text-4xl text-neon font-bold mb-4">MemeHustle Marketplace</h1>
         <MemeForm />
-        <Leaderboard memes={memes.slice(0, 5)} />
+        <Leaderboard memes={[...memes].sort((a, b) => b.upvotes - a.upvotes).slice(0, 5)} />
         <MemeGallery memes={memes} />
       </div>
     </SocketContext.Provider>
